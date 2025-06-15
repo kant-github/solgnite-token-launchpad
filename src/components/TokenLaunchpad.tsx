@@ -1,111 +1,117 @@
 'use client'
-import Image from "next/image"
-import { useState } from "react"
-import { createInitializeMint2Instruction, getMinimumBalanceForRentExemptMint, MINT_SIZE, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { useConnection, useWallet } from "@solana/wallet-adapter-react"
-import { Keypair, SystemProgram, Transaction } from "@solana/web3.js"
 
-export default function TokenLaunchpad() {
-    const wallet = useWallet();
-    const { connection } = useConnection();
+import Image from "next/image";
+import { useState } from "react";
+import {
+  createInitializeMint2Instruction,
+  getMinimumBalanceForRentExemptMint,
+  MINT_SIZE,
+  TOKEN_PROGRAM_ID
+} from "@solana/spl-token";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 
-    const [tokenMetadata, setTokenMetadata] = useState({
-        name: '',
-        symbol: '',
-        imageUrl: '',
-        initialSupply: ''
-    })
+interface Props {
+  onMintCreated: (key: PublicKey) => void;
+}
 
-    async function createToken() {
+export default function TokenLaunchpad({ onMintCreated }: Props) {
+  const wallet = useWallet();
+  const { connection } = useConnection();
 
-        const newKeyPair = Keypair.generate();
-        const lamports = await getMinimumBalanceForRentExemptMint(connection);
+  const [tokenMetadata, setTokenMetadata] = useState({
+    name: '',
+    symbol: '',
+    imageUrl: '',
+    initialSupply: ''
+  });
 
-        const transaction = new Transaction().add(
-            SystemProgram.createAccount({
-                fromPubkey: wallet.publicKey!,
-                newAccountPubkey: newKeyPair.publicKey,
-                lamports,
-                space: MINT_SIZE,
-                programId: TOKEN_PROGRAM_ID
-            }),
-            createInitializeMint2Instruction(newKeyPair.publicKey, 6, wallet.publicKey!, wallet.publicKey, TOKEN_PROGRAM_ID)
-        )
+  const [mintAddress, setMintAddress] = useState<PublicKey | null>(null);
 
-        // remember , in solana if you try to sign a transaction, you have to add the recent block hash in you transaction, only then it will get added to the blockchain
-        const recentBlockHash = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = recentBlockHash.blockhash;
-        transaction.feePayer = wallet.publicKey!
+  async function createToken() {
+    if (!wallet.publicKey) return;
 
-        transaction.partialSign(newKeyPair);
+    const newKeyPair = Keypair.generate();
+    const lamports = await getMinimumBalanceForRentExemptMint(connection);
 
-        const response = await wallet.sendTransaction(transaction, connection);
-        console.log("response is : ", response);
-    }
+    const transaction = new Transaction().add(
+      SystemProgram.createAccount({
+        fromPubkey: wallet.publicKey,
+        newAccountPubkey: newKeyPair.publicKey,
+        lamports,
+        space: MINT_SIZE,
+        programId: TOKEN_PROGRAM_ID
+      }),
+      createInitializeMint2Instruction(
+        newKeyPair.publicKey,
+        9,
+        wallet.publicKey,
+        wallet.publicKey
+      )
+    );
 
-    return (
-        <div className="flex flex-col max-w-sm w-full gap-4 bg-neutral-800 p-8 rounded-xl shadow-lg text-white">
-            <h2 className="text-lg font-semibold text-center">Create Your Token</h2>
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = wallet.publicKey;
+    transaction.partialSign(newKeyPair);
 
-            <div className="flex flex-col gap-1">
-                <label className="text-sm">Token Name</label>
-                <input
-                    type="text"
-                    placeholder="Enter token name"
-                    className="bg-neutral-900 text-sm px-4 py-2 rounded-md border border-neutral-700 placeholder:text-neutral-400 outline-none"
-                    value={tokenMetadata.name}
-                    onChange={(e) => setTokenMetadata(prev => ({ ...prev, name: e.target.value }))}
-                />
-            </div>
+    const response = await wallet.sendTransaction(transaction, connection);
+    console.log("response is:", response);
 
-            <div className="flex flex-col gap-1">
-                <label className="text-sm">Token Symbol</label>
-                <input
-                    type="text"
-                    placeholder="e.g. ETH"
-                    className="bg-neutral-900 text-sm px-4 py-2 rounded-md border border-neutral-700 placeholder:text-neutral-400 outline-none"
-                    value={tokenMetadata.symbol}
-                    onChange={(e) => setTokenMetadata(prev => ({ ...prev, symbol: e.target.value }))}
-                />
-            </div>
+    onMintCreated(newKeyPair.publicKey);
+    setMintAddress(newKeyPair.publicKey);
+  }
 
-            <div className="flex flex-col gap-1">
-                <label className="text-sm">Token Image URL</label>
-                <input
-                    type="text"
-                    placeholder="Paste image URL"
-                    className="bg-neutral-900 text-sm px-4 py-2 rounded-md border border-neutral-700 placeholder:text-neutral-400 outline-none"
-                    value={tokenMetadata.imageUrl}
-                    onChange={(e) => setTokenMetadata(prev => ({ ...prev, imageUrl: e.target.value }))}
-                />
-            </div>
+  return (
+    <div className="flex flex-col max-w-sm w-full gap-4 bg-zinc-900 p-6 rounded-2xl shadow-lg border-[1px] border-neutral-800">
+      <h2 className="text-xl font-semibold text-purple-400 text-center">Create Your Token</h2>
 
-            <div className="flex flex-col gap-1">
-                <label className="text-sm">Initial Supply</label>
-                <input
-                    type="text"
-                    placeholder="e.g. 1000000"
-                    className="bg-neutral-900 text-sm px-4 py-2 rounded-md border border-neutral-700 placeholder:text-neutral-400 outline-none"
-                    value={tokenMetadata.initialSupply}
-                    onChange={(e) => setTokenMetadata(prev => ({ ...prev, initialSupply: e.target.value }))}
-                />
-            </div>
+      {["Token Name", "Token Symbol", "Token Image URL", "Initial Supply"].map((label, idx) => {
+        const keys = ["name", "symbol", "imageUrl", "initialSupply"] as const;
+        return (
+          <div key={label} className="flex flex-col gap-1">
+            <label className="text-sm text-zinc-300">{label}</label>
+            <input
+              type="text"
+              placeholder={`Enter ${label.toLowerCase()}`}
+              className="bg-zinc-800 text-sm px-4 py-2 rounded-md border border-zinc-700 placeholder:text-zinc-500 outline-none"
+              value={tokenMetadata[keys[idx]]}
+              onChange={(e) =>
+                setTokenMetadata((prev) => ({
+                  ...prev,
+                  [keys[idx]]: e.target.value
+                }))
+              }
+            />
+          </div>
+        );
+      })}
 
-            {tokenMetadata.imageUrl && (
-                <Image
-                    src={tokenMetadata.imageUrl}
-                    alt="Token Preview"
-                    className="w-16 h-16 rounded-full object-cover mx-auto mt-2 border border-neutral-700"
-                />
-            )}
+      {tokenMetadata.imageUrl && (
+        <Image
+          src={tokenMetadata.imageUrl}
+          alt="Token Preview"
+          width={64}
+          height={64}
+          className="rounded-full object-cover mx-auto mt-2 border border-zinc-600"
+        />
+      )}
 
-            <button
-                onClick={createToken}
-                type="button"
-                className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-4 py-2 rounded-md mt-4 transition-colors"
-            >
-                Create Token
-            </button>
+      <button
+        onClick={createToken}
+        type="button"
+        className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-4 py-2 rounded-md mt-2 transition-all shadow-md"
+      >
+        Create Token
+      </button>
+
+      {mintAddress && (
+        <div className="bg-zinc-800 rounded-md px-3 py-2 text-sm text-green-400 mt-4 break-all">
+          ✅ Mint Address Created:
+          <br />
+          <span className="text-xs text-zinc-300">{mintAddress.toBase58()}</span>
         </div>
-    )
+      )}
+    </div>
+  );
 }
