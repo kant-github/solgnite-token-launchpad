@@ -9,6 +9,7 @@ import {
 } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -18,12 +19,19 @@ interface Props {
 export default function MintToken({ mintPublicKey }: Props) {
     const wallet = useWallet();
     const { connection } = useConnection();
-
+    const [copied, setCopied] = useState(false);
     const [loading, setLoading] = useState(false);
     const [txHash, setTxHash] = useState("");
     const [amount, setAmount] = useState<number>(1);
     const [ata, setAta] = useState<PublicKey | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    function handleCopy() {
+        if (!ata) return;
+        navigator.clipboard.writeText(ata.toBase58());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    }
 
     async function mintToken() {
         if (!wallet.publicKey) return;
@@ -138,10 +146,25 @@ export default function MintToken({ mintPublicKey }: Props) {
             {ata && (
                 <div className="bg-zinc-800 rounded-md px-3 py-2 text-sm text-green-400 mt-2 break-words">
                     ✅ Associated Token Account:
-                    <br />
-                    <span className="text-xs text-zinc-300">{ata.toBase58()}</span>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-zinc-300 break-all">
+                            {ata.toBase58()}
+                        </span>
+                        <button
+                            onClick={handleCopy}
+                            className="ml-2 p-1 hover:bg-zinc-700 rounded transition"
+                            title="Copy to clipboard"
+                        >
+                            {copied ? (
+                                <Check className="w-4 h-4 text-green-400" />
+                            ) : (
+                                <Copy className="w-4 h-4 text-zinc-400" />
+                            )}
+                        </button>
+                    </div>
                 </div>
             )}
+
         </div>
     );
 }
