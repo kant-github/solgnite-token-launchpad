@@ -77,12 +77,13 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
         const metadataData = {
             name: tokenMetadata.name,
             symbol: tokenMetadata.symbol,
-            uri: "https://arweave.net/6Y5uKW-CwQ3x5O_uS6n_2AbdcdK5IJWEAJu3kWDzJ70",
+            uri: "ipfs://bafkreibt6xxsggr52wwcfpkf6642qaxhhtalcyn7ejxajyzwxfnbj23weu", // This points to your full metadata.json (not just image)
             sellerFeeBasisPoints: 0,
             creators: null,
             collection: null,
             uses: null,
         };
+
 
         const ix = createCreateMetadataAccountV3Instruction(
             {
