@@ -11,6 +11,13 @@ import {
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { Check, Copy } from "lucide-react";
+import {
+    createCreateMetadataAccountV3Instruction,
+} from "@metaplex-foundation/mpl-token-metadata";
+
+export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
+    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+);
 
 interface Props {
     onMintCreated: (key: PublicKey) => void;
@@ -57,6 +64,45 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
                 wallet.publicKey
             )
         );
+
+        const metadataPDA = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("metadata"),
+                TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                newKeyPair.publicKey.toBuffer(),
+            ],
+            TOKEN_METADATA_PROGRAM_ID
+        )[0];
+
+        const metadataData = {
+            name: tokenMetadata.name,
+            symbol: tokenMetadata.symbol,
+            uri: "https://arweave.net/6Y5uKW-CwQ3x5O_uS6n_2AbdcdK5IJWEAJu3kWDzJ70",
+            sellerFeeBasisPoints: 0,
+            creators: null,
+            collection: null,
+            uses: null,
+        };
+
+        const ix = createCreateMetadataAccountV3Instruction(
+            {
+                metadata: metadataPDA,
+                mint: newKeyPair.publicKey,
+                mintAuthority: wallet.publicKey,
+                payer: wallet.publicKey,
+                updateAuthority: wallet.publicKey,
+            },
+            {
+                createMetadataAccountArgsV3: {
+                    data: metadataData,
+                    isMutable: true,
+                    collectionDetails: null,
+                },
+            }
+        )
+
+        transaction.add(ix);
+
 
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
