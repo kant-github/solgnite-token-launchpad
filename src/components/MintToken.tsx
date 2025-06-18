@@ -21,7 +21,6 @@ export default function MintToken({ mintPublicKey }: Props) {
     const { connection } = useConnection();
     const [copied, setCopied] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [txHash, setTxHash] = useState("");
     const [amount, setAmount] = useState<number>(1);
     const [ata, setAta] = useState<PublicKey | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -54,7 +53,6 @@ export default function MintToken({ mintPublicKey }: Props) {
         const transaction = new Transaction();
         setLoading(true);
         setError(null);
-        setTxHash("");
 
         try {
             await getAccount(connection, ata);
@@ -89,7 +87,6 @@ export default function MintToken({ mintPublicKey }: Props) {
         try {
             const mintResponse = await wallet.sendTransaction(mintTransaction, connection);
             console.log("mint tx:", mintResponse);
-            setTxHash(mintResponse);
         } catch {
             setError("Transaction failed. Please try again.");
         }

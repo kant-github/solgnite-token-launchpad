@@ -22,7 +22,6 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
     const wallet = useWallet();
     const { connection } = useConnection();
     const [copied, setCopied] = useState(false);
-    const [mintAddress, setMintAddress] = useState<PublicKey | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const [tokenMetadata, setTokenMetadata] = useState({
         name: '',
@@ -134,7 +133,6 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
         console.log("response is:", response);
 
         onMintCreated(newKeyPair.publicKey);
-        setMintAddress(newKeyPair.publicKey);
         toast('Mint Created Successfully !', {
             action: {
                 label: copied ? <Check /> : <Copy />,
