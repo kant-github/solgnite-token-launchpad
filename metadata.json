@@ -1,0 +1,15 @@
+{
+  "name": "Kant Token",
+  "symbol": "KANT",
+  "description": "Token for Rishi Kant",
+  "image": "ipfs://bafkreibxvvyhixk76vlsdam4hrysufqal3uptvuj73iwtwmlmxiiuunibi",
+  "properties": {
+    "files": [
+      {
+        "uri": "ipfs://bafkreibxvvyhixk76vlsdam4hrysufqal3uptvuj73iwtwmlmxiiuunibi",
+        "type": "image/png"
+      }
+    ],
+    "category": "image"
+  }
+}

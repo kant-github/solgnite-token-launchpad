@@ -1,19 +1,13 @@
 'use client'
-
 import Image from "next/image";
 import { useState } from "react";
-import {
-    createInitializeMint2Instruction,
-    getMinimumBalanceForRentExemptMint,
-    MINT_SIZE,
-    TOKEN_PROGRAM_ID
-} from "@solana/spl-token";
+import { createInitializeMint2Instruction, getMinimumBalanceForRentExemptMint, MINT_SIZE, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { Check, Copy } from "lucide-react";
-import {
-    createCreateMetadataAccountV3Instruction,
-} from "@metaplex-foundation/mpl-token-metadata";
+import { createCreateMetadataAccountV3Instruction } from "@metaplex-foundation/mpl-token-metadata";
+import { uploadFileToIPFS } from "../libs/uploadFileToIPFS";
+import { uploadJSONToPinata } from "../libs/uploadJSONToPinata";
 
 export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
     "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -28,6 +22,7 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
     const { connection } = useConnection();
     const [copied, setCopied] = useState(false);
     const [mintAddress, setMintAddress] = useState<PublicKey | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const [tokenMetadata, setTokenMetadata] = useState({
         name: '',
         symbol: '',
@@ -74,15 +69,34 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
             TOKEN_METADATA_PROGRAM_ID
         )[0];
 
+        let imageURI;
+        if (file) {
+            imageURI = await uploadFileToIPFS(file);
+        }
+        console.log("image uri is : ", imageURI);
+        const metadataJson = {
+            name: tokenMetadata.name,
+            symbol: tokenMetadata.symbol,
+            description: `Token for ${tokenMetadata.name}`,
+            image: imageURI,
+            properties: {
+                files: [{ uri: imageURI, type: file?.type }],
+                category: "image"
+            }
+        };
+
+        const metadataURI = await uploadJSONToPinata(metadataJson);
+        console.log("metadata uri is : ", metadataURI);
         const metadataData = {
             name: tokenMetadata.name,
             symbol: tokenMetadata.symbol,
-            uri: "ipfs://bafkreibt6xxsggr52wwcfpkf6642qaxhhtalcyn7ejxajyzwxfnbj23weu", // This points to your full metadata.json (not just image)
+            uri: metadataURI.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/"),
             sellerFeeBasisPoints: 0,
             creators: null,
             collection: null,
             uses: null,
         };
+
 
 
         const ix = createCreateMetadataAccountV3Instruction(
@@ -141,6 +155,19 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
                     </div>
                 );
             })}
+
+            <label htmlFor="file" className="text-sm text-zinc-300">Upload image</label>
+            <input
+                id="file"
+                type="file"
+                className="bg-zinc-800 text-sm px-4 py-2 rounded-md border border-zinc-700 placeholder:text-zinc-500 outline-none"
+                onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        setFile(e.target.files[0]);
+                    }
+                }}
+            />
+
 
             {tokenMetadata.imageUrl && (
                 <Image
