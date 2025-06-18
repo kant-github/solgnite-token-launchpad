@@ -27,7 +27,11 @@ export default function MintToken({ mintPublicKey }: Props) {
     const [error, setError] = useState<string | null>(null);
 
     function handleCopy() {
-        if (!ata) return;
+        if (!ata) {
+            console.log("returning");
+            return
+        };
+
         navigator.clipboard.writeText(ata.toBase58());
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
@@ -76,7 +80,7 @@ export default function MintToken({ mintPublicKey }: Props) {
                 mintPublicKey,
                 ata,
                 wallet.publicKey,
-                1_000_000_000 * amount, // 1e9 = 1 token with 9 decimals
+                1_000_000_000 * amount,
                 [],
                 TOKEN_PROGRAM_ID
             )
@@ -94,21 +98,23 @@ export default function MintToken({ mintPublicKey }: Props) {
     }
 
     return (
-        <div className="flex flex-col max-w-sm w-full gap-5 bg-zinc-900 p-6 rounded-2xl shadow-lg text-white border-[1px] border-neutral-800">
-            <h2 className="text-xl font-semibold text-emerald-400 text-center">Mint Tokens</h2>
+        <div className="flex flex-col max-w-sm w-full gap-5 bg-neutral-900 p-6 rounded-2xl shadow-2xl text-white border border-green-500/10 backdrop-blur-sm">
+            <h2 className="text-xl font-semibold text-green-400 text-center">
+                Mint Tokens
+            </h2>
 
-            <div className="flex flex-col gap-1">
-                <label htmlFor="amount" className="text-sm text-zinc-300">
+            <div className="flex flex-col gap-2">
+                <label htmlFor="amount" className="text-sm text-zinc-400">
                     Enter Amount to Mint
                 </label>
                 <input
                     id="amount"
                     type="number"
-                    className="bg-zinc-800 border border-zinc-700 text-sm px-4 py-2 rounded-md placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="e.g. 10"
-                    value={amount}
                     min={1}
+                    value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
+                    className="bg-neutral-800/60 border border-green-500/20 text-sm px-4 py-3 rounded-xl placeholder:text-zinc-500 text-white outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
                 />
             </div>
 
@@ -116,25 +122,17 @@ export default function MintToken({ mintPublicKey }: Props) {
                 onClick={mintToken}
                 type="button"
                 disabled={loading || !wallet.publicKey}
-                className={`w-full py-2 rounded-lg text-sm font-medium transition duration-300
-          ${loading || !wallet.publicKey
-                        ? "bg-zinc-700 cursor-not-allowed"
-                        : "bg-emerald-500 hover:bg-emerald-600"
-                    } text-white shadow-md`}
+                className={`w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]
+      ${loading || !wallet.publicKey
+                        ? "bg-neutral-700 cursor-not-allowed text-zinc-400"
+                        : "bg-green-500/90 hover:bg-green-600 hover:brightness-110 text-black shadow-lg"
+                    }`}
             >
                 {loading ? "Minting..." : "Mint Token"}
             </button>
 
             {error && (
                 <p className="text-sm text-red-500 text-center">{error}</p>
-            )}
-
-            {txHash && (
-                <div className="text-sm text-center text-emerald-400 break-words">
-                    ✅ Token Minted Successfully!
-                    <br />
-                    <span className="text-xs text-zinc-300">Tx Hash: {txHash}</span>
-                </div>
             )}
 
             {!wallet.publicKey && (
@@ -144,27 +142,27 @@ export default function MintToken({ mintPublicKey }: Props) {
             )}
 
             {ata && (
-                <div className="bg-zinc-800 rounded-md px-3 py-2 text-sm text-green-400 mt-2 break-words">
+                <div className="bg-neutral-800/60 rounded-xl px-4 py-3 text-sm text-green-400 border border-green-500/10 mt-2 break-words">
                     ✅ Associated Token Account:
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-zinc-300 break-all">
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-zinc-300 break-all font-mono">
                             {ata.toBase58()}
                         </span>
                         <button
                             onClick={handleCopy}
-                            className="ml-2 p-1 hover:bg-zinc-700 rounded transition"
+                            className="p-2 hover:bg-neutral-700/50 rounded-lg transition"
                             title="Copy to clipboard"
                         >
                             {copied ? (
                                 <Check className="w-4 h-4 text-green-400" />
                             ) : (
-                                <Copy className="w-4 h-4 text-zinc-400" />
+                                <Copy className="w-4 h-4 text-zinc-400 hover:text-white" />
                             )}
                         </button>
                     </div>
                 </div>
             )}
-
         </div>
+
     );
 }
