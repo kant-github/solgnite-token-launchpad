@@ -1,5 +1,4 @@
 'use client'
-import Image from "next/image";
 import { useState } from "react";
 import { createInitializeMint2Instruction, getMinimumBalanceForRentExemptMint, MINT_SIZE, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -69,11 +68,18 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
             TOKEN_METADATA_PROGRAM_ID
         )[0];
 
-        let imageURI;
+        let imageURI = "";
         if (file) {
             imageURI = await uploadFileToIPFS(file);
+            imageURI = imageURI.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+
+            setTokenMetadata((prev) => ({
+                ...prev,
+                imageUrl: imageURI
+            }));
         }
-        console.log("image uri is : ", imageURI);
+
+
         const metadataJson = {
             name: tokenMetadata.name,
             symbol: tokenMetadata.symbol,
@@ -87,6 +93,7 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
 
         const metadataURI = await uploadJSONToPinata(metadataJson);
         console.log("metadata uri is : ", metadataURI);
+
         const metadataData = {
             name: tokenMetadata.name,
             symbol: tokenMetadata.symbol,
@@ -96,8 +103,6 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
             collection: null,
             uses: null,
         };
-
-
 
         const ix = createCreateMetadataAccountV3Instruction(
             {
@@ -167,17 +172,6 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
                     }
                 }}
             />
-
-
-            {tokenMetadata.imageUrl && (
-                <Image
-                    src={tokenMetadata.imageUrl}
-                    alt="Token Preview"
-                    width={64}
-                    height={64}
-                    className="rounded-full object-cover mx-auto mt-2 border border-zinc-600"
-                />
-            )}
 
             <button
                 onClick={createToken}
