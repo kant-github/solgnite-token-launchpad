@@ -1,9 +1,9 @@
 'use client'
 import { Geist, Geist_Mono } from "next/font/google";
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { Toaster } from "@/components/ui/sonner"
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import "./globals.css";
+import { Toaster } from "@/components/toast/toaster";
 
 
 const geistSans = Geist({
@@ -29,8 +29,8 @@ export default function RootLayout({
         <ConnectionProvider endpoint="https://api.devnet.solana.com">
           <WalletProvider wallets={[]}>
             <WalletModalProvider>
-              {children}
               <Toaster />
+              {children}
             </WalletModalProvider>
           </WalletProvider>
         </ConnectionProvider>

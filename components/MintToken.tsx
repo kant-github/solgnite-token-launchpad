@@ -11,6 +11,8 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "./toast/useToast";
+import { ToastAction } from "./toast/toast";
 
 interface Props {
     mintPublicKey: PublicKey;
@@ -19,6 +21,8 @@ interface Props {
 export default function MintToken({ mintPublicKey }: Props) {
     const wallet = useWallet();
     const { connection } = useConnection();
+    const { toast } = useToast();
+
     const [copied, setCopied] = useState(false);
     const [loading, setLoading] = useState(false);
     const [amount, setAmount] = useState<number>(1);
@@ -26,11 +30,7 @@ export default function MintToken({ mintPublicKey }: Props) {
     const [error, setError] = useState<string | null>(null);
 
     function handleCopy() {
-        if (!ata) {
-            console.log("returning");
-            return
-        };
-
+        if (!ata) return;
         navigator.clipboard.writeText(ata.toBase58());
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
@@ -43,7 +43,7 @@ export default function MintToken({ mintPublicKey }: Props) {
             return;
         }
 
-        const ata = getAssociatedTokenAddressSync(
+        const ataAddress = getAssociatedTokenAddressSync(
             mintPublicKey,
             wallet.publicKey,
             false,
@@ -55,28 +55,52 @@ export default function MintToken({ mintPublicKey }: Props) {
         setError(null);
 
         try {
-            await getAccount(connection, ata);
+            await getAccount(connection, ataAddress);
         } catch {
             transaction.add(
                 createAssociatedTokenAccountInstruction(
                     wallet.publicKey,
-                    ata,
+                    ataAddress,
                     wallet.publicKey,
                     mintPublicKey,
                     TOKEN_PROGRAM_ID
                 )
             );
 
-            const createATAResponse = await wallet.sendTransaction(transaction, connection);
-            console.log("createATA tx:", createATAResponse);
+            try {
+                const createATAResponse = await wallet.sendTransaction(transaction, connection);
+                console.log("createATA tx:", createATAResponse);
+                toast({
+                    title: "ATA Created",
+                    description: `${ataAddress.toBase58().slice(0, 8)}...`,
+                    action: (
+                        <ToastAction
+                            altText="Copy ATA"
+                            onClick={() => {
+                                navigator.clipboard.writeText(ataAddress.toBase58());
+                                toast({
+                                    title: "Copied!",
+                                    description: "ATA address copied to clipboard.",
+                                });
+                            }}
+                        >
+                            Copy
+                        </ToastAction>
+                    ),
+                });
+            } catch {
+                setError("Failed to create ATA.");
+                setLoading(false);
+                return;
+            }
         }
 
-        setAta(ata);
+        setAta(ataAddress);
 
         const mintTransaction = new Transaction().add(
             createMintToInstruction(
                 mintPublicKey,
-                ata,
+                ataAddress,
                 wallet.publicKey,
                 1_000_000_000 * amount,
                 [],
@@ -85,8 +109,11 @@ export default function MintToken({ mintPublicKey }: Props) {
         );
 
         try {
-            const mintResponse = await wallet.sendTransaction(mintTransaction, connection);
-            console.log("mint tx:", mintResponse);
+            await wallet.sendTransaction(mintTransaction, connection);
+            toast({
+                title: `${1_000_000_000 * amount} tokens minted successfully`,
+            });
+
         } catch {
             setError("Transaction failed. Please try again.");
         }
@@ -96,9 +123,7 @@ export default function MintToken({ mintPublicKey }: Props) {
 
     return (
         <div className="flex flex-col max-w-sm w-full gap-5 bg-neutral-900 p-6 rounded-2xl shadow-2xl text-white border border-green-500/10 backdrop-blur-sm">
-            <h2 className="text-xl font-semibold text-green-400 text-center">
-                Mint Tokens
-            </h2>
+            <h2 className="text-xl font-semibold text-green-400 text-center">Mint Tokens</h2>
 
             <div className="flex flex-col gap-2">
                 <label htmlFor="amount" className="text-sm text-zinc-400">
@@ -119,32 +144,25 @@ export default function MintToken({ mintPublicKey }: Props) {
                 onClick={mintToken}
                 type="button"
                 disabled={loading || !wallet.publicKey}
-                className={`w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]
-      ${loading || !wallet.publicKey
-                        ? "bg-neutral-700 cursor-not-allowed text-zinc-400"
-                        : "bg-green-500/90 hover:bg-green-600 hover:brightness-110 text-black shadow-lg"
+                className={`w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${loading || !wallet.publicKey
+                    ? "bg-neutral-700 cursor-not-allowed text-zinc-400"
+                    : "bg-green-500/90 hover:bg-green-600 hover:brightness-110 text-black shadow-lg"
                     }`}
             >
                 {loading ? "Minting..." : "Mint Token"}
             </button>
 
-            {error && (
-                <p className="text-sm text-red-500 text-center">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
             {!wallet.publicKey && (
-                <p className="text-center text-zinc-400 text-sm">
-                    Connect your wallet to mint tokens.
-                </p>
+                <p className="text-center text-zinc-400 text-sm">Connect your wallet to mint tokens.</p>
             )}
 
             {ata && (
                 <div className="bg-neutral-800/60 rounded-xl px-4 py-3 text-sm text-green-400 border border-green-500/10 mt-2 break-words">
                     ✅ Associated Token Account:
                     <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-zinc-300 break-all font-mono">
-                            {ata.toBase58()}
-                        </span>
+                        <span className="text-xs text-zinc-300 break-all font-mono">{ata.toBase58()}</span>
                         <button
                             onClick={handleCopy}
                             className="p-2 hover:bg-neutral-700/50 rounded-lg transition"
@@ -160,6 +178,5 @@ export default function MintToken({ mintPublicKey }: Props) {
                 </div>
             )}
         </div>
-
     );
 }

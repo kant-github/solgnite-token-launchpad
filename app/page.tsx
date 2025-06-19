@@ -1,8 +1,7 @@
 'use client'
-
-import MintToken from '@/src/components/MintToken';
-import TokenLaunchpad from '@/src/components/TokenLaunchpad';
-import WalletConnector from '@/src/components/WalletConnector';
+import MintToken from '@/components/MintToken';
+import TokenLaunchpad from '@/components/TokenLaunchpad';
+import WalletConnector from '@/components/WalletConnector';
 import { PublicKey } from '@solana/web3.js';
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';

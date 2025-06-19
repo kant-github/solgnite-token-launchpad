@@ -3,12 +3,13 @@ import { useState } from "react";
 import { createInitializeMint2Instruction, getMinimumBalanceForRentExemptMint, MINT_SIZE, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import { Check, Copy, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createCreateMetadataAccountV3Instruction } from "@metaplex-foundation/mpl-token-metadata";
-import { uploadFileToIPFS } from "../libs/uploadFileToIPFS";
-import { uploadJSONToPinata } from "../libs/uploadJSONToPinata";
 import Image from "next/image";
-import { toast } from "sonner";
+import { uploadFileToIPFS } from "@/src/libs/uploadFileToIPFS";
+import { uploadJSONToPinata } from "@/src/libs/uploadJSONToPinata";
+import { useToast } from "./toast/useToast";
+import { ToastAction } from "./toast/toast";
 
 export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
     "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -20,8 +21,8 @@ interface Props {
 
 export default function TokenLaunchpad({ onMintCreated }: Props) {
     const wallet = useWallet();
+    const { toast } = useToast();
     const { connection } = useConnection();
-    const [copied, setCopied] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [tokenMetadata, setTokenMetadata] = useState({
         name: '',
@@ -29,16 +30,14 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
         imageUrl: '',
     });
 
-
-    function handleCopy(mintKey: string) {
-        navigator.clipboard.writeText(mintKey);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-    }
-
-
     async function createToken() {
-        if (!wallet.publicKey) return;
+        if (!wallet.publicKey) {
+            toast({
+                title: 'wallet not connected',
+                variant: 'destructive'
+            })
+            return;
+        };
 
         const newKeyPair = Keypair.generate();
         const lamports = await getMinimumBalanceForRentExemptMint(connection);
@@ -133,14 +132,26 @@ export default function TokenLaunchpad({ onMintCreated }: Props) {
         console.log("response is:", response);
 
         onMintCreated(newKeyPair.publicKey);
-        toast('Mint Created Successfully !', {
-            action: {
-                label: copied ? <Check /> : <Copy />,
-                onClick: () => handleCopy(newKeyPair.publicKey.toBase58()),
-            }
+        toast({
+            title: 'Mint Created Successfully!',
+            description: `Mint Address: ${newKeyPair.publicKey.toBase58().slice(0, 6)}...`,
+            action: (
+                <ToastAction
+                    altText="Copy Mint Address"
+                    onClick={() => {
+                        navigator.clipboard.writeText(newKeyPair.publicKey.toBase58());
+                        toast({
+                            title: "Copied!",
+                            description: "Mint address copied to clipboard",
+                        });
+                    }}
+                >
+                    Copy
+                </ToastAction>
+            ),
         });
-    }
 
+    }
     return (
         <div className="relative max-w-md w-full">
             {/* Glassmorphism background with gradient border */}
