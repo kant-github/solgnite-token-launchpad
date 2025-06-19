@@ -122,8 +122,8 @@ export default function MintToken({ mintPublicKey }: Props) {
     }
 
     return (
-        <div className="flex flex-col max-w-sm w-full gap-5 bg-neutral-900 p-6 rounded-2xl shadow-2xl text-white border border-green-500/10 backdrop-blur-sm">
-            <h2 className="text-xl font-semibold text-green-400 text-center">Mint Tokens</h2>
+        <div className="flex flex-col max-w-sm w-full gap-5 bg-neutral-900 p-6 rounded-2xl shadow-2xl text-white border border-violet-500/10 backdrop-blur-sm">
+            <h2 className="text-xl font-semibold text-violet-400 text-center">Mint Tokens</h2>
 
             <div className="flex flex-col gap-2">
                 <label htmlFor="amount" className="text-sm text-zinc-400">
@@ -136,7 +136,7 @@ export default function MintToken({ mintPublicKey }: Props) {
                     min={1}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="bg-neutral-800/60 border border-green-500/20 text-sm px-4 py-3 rounded-xl placeholder:text-zinc-500 text-white outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+                    className="bg-neutral-800/60 border border-violet-500/20 text-sm px-4 py-3 rounded-xl placeholder:text-zinc-500 text-white outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                 />
             </div>
 
@@ -146,7 +146,7 @@ export default function MintToken({ mintPublicKey }: Props) {
                 disabled={loading || !wallet.publicKey}
                 className={`w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${loading || !wallet.publicKey
                     ? "bg-neutral-700 cursor-not-allowed text-zinc-400"
-                    : "bg-green-500/90 hover:bg-green-600 hover:brightness-110 text-black shadow-lg"
+                    : "bg-violet-500/90 hover:bg-violet-600 hover:brightness-110 text-black shadow-lg"
                     }`}
             >
                 {loading ? "Minting..." : "Mint Token"}
@@ -159,7 +159,7 @@ export default function MintToken({ mintPublicKey }: Props) {
             )}
 
             {ata && (
-                <div className="bg-neutral-800/60 rounded-xl px-4 py-3 text-sm text-green-400 border border-green-500/10 mt-2 break-words">
+                <div className="bg-neutral-800/60 rounded-xl px-4 py-3 text-sm text-violet-400 border border-violet-500/10 mt-2 break-words">
                     ✅ Associated Token Account:
                     <div className="flex items-center gap-2 mt-2">
                         <span className="text-xs text-zinc-300 break-all font-mono">{ata.toBase58()}</span>
@@ -169,7 +169,7 @@ export default function MintToken({ mintPublicKey }: Props) {
                             title="Copy to clipboard"
                         >
                             {copied ? (
-                                <Check className="w-4 h-4 text-green-400" />
+                                <Check className="w-4 h-4 text-violet-400" />
                             ) : (
                                 <Copy className="w-4 h-4 text-zinc-400 hover:text-white" />
                             )}
